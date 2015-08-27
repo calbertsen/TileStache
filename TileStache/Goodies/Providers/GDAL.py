@@ -70,7 +70,7 @@ class Provider:
         try:
             # Prepare output gdal datasource -----------------------------------
             
-            area_ds = driver.Create('/vsimem/output', width, height, 3)
+            area_ds = driver.Create('/vsimem/output', width, height, src_ds.RasterCount)
             
             if area_ds is None:
                 raise Exception('uh oh.')
@@ -82,7 +82,7 @@ class Provider:
                 # We have to create a mask dataset with the same number of bands as the input since there isn't an
                 # efficient way to extract a single band from a dataset which doesn't risk attempting to copy the entire
                 # dataset.
-                mask_ds = driver.Create('/vsimem/alpha', width, height, src_ds.RasterCount, gdal.GDT_Float32)
+                mask_ds = driver.Create('/vsimem/alpha', width, height, src_ds.RasterCount, gdal.GDT_Float64)
             
                 if mask_ds is None:
                     raise Exception('Failed to create dataset mask.')
@@ -136,14 +136,16 @@ class Provider:
             channel = grayscale_src and (1, 1, 1) or (1, 2, 3)
             r, g, b = [area_ds.GetRasterBand(i).ReadRaster(0, 0, width, height) for i in channel]
 
-            if mask_ds is None:
+            if self.maskband == 0:
                 data = ''.join([''.join(pixel) for pixel in zip(r, g, b)])
                 area = Image.fromstring('RGB', (width, height), data)
             else:
-                a = mask_ds.GetRasterBand(self.maskband).GetMaskBand().ReadRaster(0, 0, width, height)
+                #a = mask_ds.GetRasterBand(self.maskband).GetMaskBand().ReadRaster(0, 0, width, height)
+                r, g, b, a = [area_ds.GetRasterBand(i).ReadRaster(0, 0, width, height) for i in (1, 2, 3, 4)]
+                #a = mask_ds.GetRasterBand(self.maskband).ReadRaster(0, 0, width, height)
                 data = ''.join([''.join(pixel) for pixel in zip(r, g, b, a)])
                 area = Image.fromstring('RGBA', (width, height), data)
-
+                    
         finally:
             driver.Delete('/vsimem/output')
             if self.maskband > 0:
