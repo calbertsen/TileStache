@@ -43,7 +43,7 @@ class Provider:
         """
         self.layer = layer
         
-        fileurl = urljoin(layer.config.dirpath, filename)
+        fileurl = urljoin('', filename)
         scheme, h, file_path, p, q, f = urlparse(fileurl)
         
         if scheme not in ('', 'file'):
@@ -61,7 +61,9 @@ class Provider:
         """
         src_ds = gdal.Open(str(self.filename))
         driver = gdal.GetDriverByName('GTiff')
-        
+
+        print str(self.filename)
+        print src_ds        
         if src_ds.GetGCPs():
             src_ds.SetProjection(src_ds.GetGCPProjection())
         
